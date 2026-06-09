@@ -169,7 +169,28 @@ def handle_client(
             elif packet_type == BROADCAST:
 
                 handle_broadcast(
-                    packet
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == PRIVATE_MESSAGE:
+
+                handle_private_message(
+                    packet,
+                    client_socket
+                )
+            
+            elif packet_type == ONLINE_USERS:
+
+                handle_online_users(
+                    client_socket
+                )
+
+            elif packet_type == GET_HISTORY:
+
+                handle_get_history(
+                    packet,
+                    client_socket
                 )
 
             else:
@@ -348,6 +369,146 @@ def handle_room_list(
         serialize(response).encode()
     )
 
+# BROADCAST MESSAGE
+def handle_broadcast(
+    packet,
+    client_socket
+):
+
+    username = packet["sender"]
+    room_name = packet["room"]
+    message = packet["data"]["message"]
+
+    if room_name not in rooms:
+
+        response = packet_error(
+            "Room not found"
+        )
+
+        client_socket.send(
+            serialize(
+                response
+            ).encode()
+        )
+
+        return
+
+    if room_name not in chat_history:
+
+        chat_history[
+            room_name
+        ] = []
+
+    chat_history[
+        room_name
+    ].append({
+
+        "sender": username,
+
+        "message": message,
+
+        "timestamp": packet[
+            "timestamp"
+        ]
+    })
+
+    print(
+        f"[BROADCAST SAVED] "
+        f"{username} -> {room_name}"
+    )
+
+    response = packet_success(
+        "Broadcast saved"
+    )
+
+    client_socket.send(
+        serialize(
+            response
+        ).encode()
+    )
+
+#PRIVATE MESSAGE
+def handle_private_message(
+    packet,
+    client_socket
+):
+
+    sender = packet["sender"]
+
+    target = packet["data"]["target"]
+
+    message = packet["data"]["message"]
+
+    print(
+        f"[PM] {sender} -> {target}"
+    )
+
+    response = packet_success(
+        "Private message saved"
+    )
+
+    client_socket.send(
+        serialize(
+            response
+        ).encode()
+    )
+
+# ONLINE USERS
+def handle_online_users(
+    client_socket
+):
+
+    response = create_packet(
+        ONLINE_USERS,
+        data={
+            "users":
+            list(
+                online_users.keys()
+            )
+        }
+    )
+
+    client_socket.send(
+        serialize(
+            response
+        ).encode()
+    )
+
+def handle_get_history(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+
+    history = chat_history.get(
+        room_name,
+        []
+    )
+
+    response = create_packet(
+        GET_HISTORY,
+        room=room_name,
+        data={
+            "history": history
+        }
+    )
+
+    print("\n=== HISTORY RESPONSE ===")
+    print(response)
+
+    client_socket.send(
+        serialize(
+            response
+        ).encode()
+    )
+
+    print(
+        f"[GET HISTORY] "
+        f"{room_name}"
+    )
+    
+
 # LEAVE ROOM
 def handle_leave_room(
     packet,
@@ -397,89 +558,6 @@ def handle_leave_room(
         serialize(response).encode()
     )
 
-
-def handle_broadcast(
-    packet
-):
-
-    sender = packet["sender"]
-
-    room_name = packet["room"]
-
-    message = packet[
-        "data"
-    ]["message"]
-
-    if room_name not in rooms:
-
-        return
-
-    members = rooms[
-        room_name
-    ]["members"]
-
-    broadcast_packet = create_packet(
-        BROADCAST,
-        sender=sender,
-        room=room_name,
-        data={
-            "message": message
-        }
-    )
-
-    serialized = serialize(
-        broadcast_packet
-    )
-
-    print(
-        f"[CHAT] "
-        f"{sender}@{room_name}: "
-        f"{message}"
-    )
-
-    for username in members:
-
-        if username in online_users:
-
-            try:
-
-                online_users[
-                    username
-                ].send(
-                    serialized.encode()
-                )
-
-            except:
-
-                pass
-
-def receive_messages(
-    client
-):
-
-    while True:
-
-        try:
-
-            data = client.recv(
-                4096
-            ).decode()
-
-            packet = deserialize(
-                data
-            )
-
-            if packet["type"] == BROADCAST:
-
-                print(
-                    f"\n[{packet['room']}] "
-                    f"{packet['sender']}: "
-                    f"{packet['data']['message']}"
-                )
-
-        except:
-
-            break
 
 # ==========================================
 # MAIN

@@ -1,4 +1,6 @@
 import socket
+from xmlrpc import client
+
 from protocol import *
 
 HOST = "127.0.0.1"
@@ -14,6 +16,9 @@ def send_packet(client, packet):
     response = client.recv(
         4096
     ).decode()
+
+    print("\nRAW RESPONSE:")
+    print(response)
 
     return deserialize(response)
 
@@ -71,9 +76,12 @@ def main():
         print("1. Create Room")
         print("2. Join Room")
         print("3. Room List")
-        print("4. Leave Room")
-        print("5. Broadcast Chat")
-        print("6. Exit")
+        print("4. Online Users")
+        print("5. Broadcast Message")
+        print("6. Private Message")
+        print("7. Chat History")
+        print("8. Leave Room")
+        print("9. Exit")
 
         choice = input("> ")
 
@@ -166,11 +174,132 @@ def main():
                         f"{i}. {room}"
                     )
 
+        elif choice == "4":
+
+            packet = create_packet(
+                ONLINE_USERS,
+                sender=username
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            users = response["data"]["users"]
+
+            print(
+                "\n===== ONLINE USERS ====="
+            )
+
+            for user in users:
+
+                print(user)
+
+        elif choice == "5":
+
+            room_name = input(
+                "Room Name: "
+            )
+
+            message = input(
+                "Message: "
+            )
+
+            packet = create_packet(
+                BROADCAST,
+                sender=username,
+                room=room_name,
+                data={
+                    "message": message
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+        elif choice == "6":
+
+            target = input(
+                "Target User: "
+            )
+
+            message = input(
+                "Message: "
+            )
+
+            packet = create_packet(
+                PRIVATE_MESSAGE,
+                sender=username,
+                data={
+                    "target": target,
+                    "message": message
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+
+        elif choice == "7":
+
+            room_name = input(
+                "Room Name: "
+            )
+
+            packet = create_packet(
+                GET_HISTORY,
+                sender=username,
+                room=room_name
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print("\nDEBUG RESPONSE")
+            print(response)
+
+            history = response[
+                "data"
+            ][
+                "history"
+            ]
+
+            print(
+                "\n===== CHAT HISTORY ====="
+            )
+
+            if not history:
+
+                print(
+                    "No messages found."
+                )
+
+            else:
+
+                for msg in history:
+
+                    print(
+                        f"[{msg['timestamp']}] "
+                        f"{msg['sender']}: "
+                        f"{msg['message']}"
+                    )
+
         # ======================
         # EXIT
         # ======================
 
-        elif choice == "4":
+        elif choice == "8":
 
             room_name = input(
                 "Room Name: "
@@ -193,30 +322,7 @@ def main():
 
             print(response)
 
-        elif choice == "5":
-
-            room_name = input(
-                "Room Name: "
-            )
-
-            message = input(
-                "Message: "
-            )
-
-            packet = create_packet(
-                BROADCAST,
-                sender=username,
-                room=room_name,
-                data={
-                    "message": message
-                }
-            )
-
-            client.send(
-                serialize(packet).encode()
-            )
-
-        elif choice == "6":
+        elif choice == "9":
 
             print(
                 "\nDisconnecting..."

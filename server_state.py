@@ -17,3 +17,6 @@ tasks = {}
 # History chat
 
 chat_history = {}
+
+#private messages
+private_messages = {}
