@@ -1,6 +1,7 @@
 import socket
-from xmlrpc import client
 import threading
+import time
+import queue
 
 from protocol import *
 
@@ -8,65 +9,107 @@ HOST = "127.0.0.1"
 PORT = 5000
 
 current_room = None
+receiver_thread = None
+response_queue = queue.Queue()
 
-def receive_notifications(
-    client
-):
+def receive_messages(client):
 
     while True:
 
         try:
 
-            response = client.recv(
-                4096
-            ).decode()
+            data = client.recv(4096)
 
-            if not response:
-
+            if not data:
+                print("\n[INFO] Koneksi ke server terputus.")
                 break
 
-            packet = deserialize(
-                response
-            )
+            packet = deserialize(data.decode())
+            packet_type = packet["type"]
 
-            if packet[
-                "type"
-            ] == TASK_NOTIFICATION:
+            if packet_type == BROADCAST:
+                sender = packet["sender"]
+                message = packet["data"]["message"]
+                timestamp = packet["timestamp"]
+                print(f"\n[{timestamp}] {sender}: {message}")
+                print(">>> ", end="", flush=True)
 
-                print(
-                    "\n=================="
-                )
+            elif packet_type == TASK_NOTIFICATION:
+                print(f"\n==================")
+                print(f"NOTIFICATION")
+                print(packet["data"]["message"])
+                print(f"==================")
+                print(">>> ", end="", flush=True)
 
-                print(
-                    "NOTIFICATION"
-                )
+            else:
+                # Response atas command → masuk queue
+                response_queue.put(packet)
 
-                print(
-                    packet["data"]["message"]
-                )
-
-                print(
-                    "=================="
-                )
+        except socket.timeout:
+            continue
 
         except:
-
             break
 
 def send_packet(client, packet):
 
-    client.send(
-        serialize(packet).encode()
+    try:
+        client.send(serialize(packet).encode())
+
+        # Kalau receiver thread sudah jalan, ambil dari queue
+        # Kalau belum (saat login/register), baca langsung dari socket
+        if receiver_thread is not None and receiver_thread.is_alive():
+            response = response_queue.get(timeout=5)
+        else:
+            data = client.recv(4096)
+            response = deserialize(data.decode())
+
+        return response
+
+    except queue.Empty:
+        print("\n[ERROR] Server tidak merespons (timeout)")
+        return None
+
+    except Exception as e:
+        print(f"\n[ERROR] {e}")
+        return None
+
+
+def view_private_messages(
+    client,
+    username
+):
+
+    packet = create_packet(
+        GET_PRIVATE_MESSAGES,
+        sender=username
     )
 
-    response = client.recv(
-        4096
-    ).decode()
+    response = send_packet(client, packet)
 
-    print("\nRAW RESPONSE:")
-    print(response)
+    if not response:
+        print("[ERROR] Failed to get private messages")
+        return
 
-    return deserialize(response)
+    messages = response.get("data", {}).get("messages", {})
+
+    print("\n===== PRIVATE MESSAGES =====")
+
+    if not messages:
+        print("No messages")
+        return
+
+    for sender in messages:
+        print(f"\nFrom: {sender}")
+        print("-" * 40)
+
+        for msg in messages[sender]:
+            print(
+                f"[{msg['timestamp']}] "
+                f"{msg['message']}"
+            )
+
+        print()
 
 
 def main():
@@ -143,15 +186,17 @@ def main():
 
             if response["type"] == SUCCESS:
 
-                threading.Thread(
+                global receiver_thread
+                receiver_thread = threading.Thread(
 
-                    target=receive_notifications,
+                    target=receive_messages,
 
                     args=(client,),
 
                     daemon=True
 
-                ).start()
+                )
+                receiver_thread.start()
 
                 print(
                     "\nLogin berhasil!"
@@ -360,12 +405,10 @@ def main():
 
             print(response)
 
-        # VIEW PRIVATE MESSAGES
         elif choice == "7":
-            print(
-                "\nBelum diimplementasikan"
-            )
-    
+
+            view_private_messages(client, username)
+
         # ======================
         # EXIT
         # ======================
@@ -392,6 +435,17 @@ def room_menu(
     current_room
 ):
 
+    global receiver_thread
+
+    if receiver_thread is None or not receiver_thread.is_alive():
+        receiver_thread = threading.Thread(
+            target=receive_messages,
+            args=(client,),
+            daemon=True
+        )
+        receiver_thread.start()
+        print("[RECEIVER] Listening for messages...")
+
     while True:
 
         print(
@@ -405,9 +459,9 @@ def room_menu(
         print("4. Create Task")
         print("5. Assign Task")
         print("6. Update Task")
-
-        print("7. Leave Room")
-        print("8. Back")
+        print("7. Delete Task")
+        print("8. Leave Room")
+        print("9. Back")
 
         choice = input("> ")
 
@@ -654,10 +708,61 @@ def room_menu(
             print(response)
 
         # =====================
-        # LEAVE ROOM
+        # DELETE TASK
         # =====================
 
         elif choice == "7":
+
+            # Tampilkan task board dulu biar user tau ID-nya
+            packet = create_packet(
+                TASK_BOARD,
+                sender=username,
+                room=current_room
+            )
+            response = send_packet(client, packet)
+
+            if not response:
+                continue
+
+            task_list = response["data"]["tasks"]
+
+            if not task_list:
+                print("Tidak ada task.")
+                continue
+
+            print(f"\n===== TASK BOARD ({current_room}) =====")
+            for task in task_list:
+                assignee = task['assignee'] if task['assignee'] else '-'
+                print(f"  [ID: {task['id']}] {task['title']} | {task['status']} | Assignee: {assignee}")
+
+            try:
+                task_id = int(input("\nTask ID yang ingin dihapus: "))
+            except ValueError:
+                print("ID harus angka.")
+                continue
+
+            konfirmasi = input(f"Yakin hapus task {task_id}? (y/n): ").strip().lower()
+            if konfirmasi != "y":
+                print("Dibatalkan.")
+                continue
+
+            packet = create_packet(
+                DELETE_TASK,
+                sender=username,
+                room=current_room,
+                data={"task_id": task_id}
+            )
+
+            response = send_packet(client, packet)
+
+            if response:
+                print(f"[Server] {response['data']['message']}")
+
+        # =====================
+        # LEAVE ROOM
+        # =====================
+
+        elif choice == "8":
 
             packet = create_packet(
                 LEAVE_ROOM,
@@ -678,7 +783,7 @@ def room_menu(
         # BACK
         # =====================
 
-        elif choice == "8":
+        elif choice == "9":
 
             break
 

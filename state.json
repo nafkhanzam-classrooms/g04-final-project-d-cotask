@@ -1,0 +1,42 @@
+{
+    "rooms": {
+        "nana": {
+            "members": []
+        },
+        "nunu": {
+            "members": [
+                "salwa"
+            ]
+        }
+    },
+    "tasks": {
+        "nana": [
+            {
+                "id": 1,
+                "title": "miw",
+                "assignee": "",
+                "status": "TODO",
+                "created_by": "salwa"
+            }
+        ],
+        "nunu": [
+            {
+                "id": 1,
+                "title": "hehe",
+                "assignee": "",
+                "status": "TODO",
+                "created_by": "salwa"
+            }
+        ]
+    },
+    "chat_history": {
+        "nana": [
+            {
+                "sender": "salwa",
+                "message": "hehe",
+                "timestamp": "2026-06-13 06:08:03"
+            }
+        ]
+    },
+    "private_messages": {}
+}

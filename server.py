@@ -1,6 +1,8 @@
 import socket
 import threading
 import json
+import time
+import hashlib
 
 from protocol import *
 from server_state import *
@@ -41,6 +43,38 @@ def save_users(users):
             indent=4
         )
 
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+STATE_FILE = "state.json"
+
+def save_state():
+    state = {
+        "rooms": rooms,
+        "tasks": tasks,
+        "chat_history": chat_history,
+        "private_messages": private_messages,
+    }
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=4)
+    except Exception as e:
+        print(f"[WARN] Gagal simpan state: {e}")
+
+def load_state():
+    try:
+        with open(STATE_FILE, "r") as f:
+            state = json.load(f)
+        rooms.update(state.get("rooms", {}))
+        tasks.update(state.get("tasks", {}))
+        chat_history.update(state.get("chat_history", {}))
+        private_messages.update(state.get("private_messages", {}))
+        print("[INFO] State berhasil dimuat.")
+    except FileNotFoundError:
+        print("[INFO] Tidak ada state tersimpan, mulai fresh.")
+    except Exception as e:
+        print(f"[WARN] Gagal load state: {e}")
+
 def handle_register(
     packet,
     client_socket
@@ -63,7 +97,7 @@ def handle_register(
     else:
 
         users[username] = {
-            "password": password
+            "password": hash_password(password)
         }
 
         save_users(users)
@@ -105,7 +139,7 @@ def handle_login(
 
     elif users[
         username
-    ]["password"] != password:
+    ]["password"] != hash_password(password):
 
         response = packet_error(
             "Wrong password"
@@ -182,6 +216,17 @@ def remove_user(client_socket):
                     f"{room_name}"
                 )
 
+        # HAPUS DARI ROOM_SOCKETS
+        for room_name in room_sockets:
+            room_sockets[room_name] = [
+                (u, s) for u, s in room_sockets[room_name]
+                if u != disconnected_user
+            ]
+
+        # HAPUS DARI USER_CURRENT_ROOM
+        if disconnected_user in user_current_room:
+            del user_current_room[disconnected_user]
+
         print(
             f"[DISCONNECTED] "
             f"{disconnected_user}"
@@ -196,6 +241,71 @@ def remove_user(client_socket):
         print(rooms)
 
 # ==========================================
+# BROADCAST TO ROOM
+# ==========================================
+
+def broadcast_to_room(
+    room_name,
+    packet
+):
+    """Send packet to all active clients in a room"""
+
+    if room_name not in room_sockets:
+        return
+
+    disconnected = []
+
+    for username, sock in room_sockets[
+        room_name
+    ]:
+        try:
+            sock.send(
+                serialize(packet).encode()
+            )
+        except Exception as e:
+            print(
+                f"[BROADCAST ERROR] "
+                f"Failed to send to {username}: {e}"
+            )
+            disconnected.append(
+                (username, sock)
+            )
+
+    for item in disconnected:
+        room_sockets[
+            room_name
+        ].remove(item)
+
+# ==========================================
+# SEND PM NOTIFICATION
+# ==========================================
+
+def send_pm_notification(
+    recipient,
+    sender
+):
+    """Notify user of incoming PM"""
+
+    if recipient not in online_users:
+        return
+
+    packet = create_packet(
+        TASK_NOTIFICATION,
+        data={
+            "message": f"New message from {sender}"
+        }
+    )
+
+    try:
+        online_users[
+            recipient
+        ].send(
+            serialize(packet).encode()
+        )
+    except:
+        pass
+
+# ==========================================
 # CLIENT THREAD
 # ==========================================
 
@@ -208,6 +318,9 @@ def handle_client(
         f"[CONNECTED] {address}"
     )
 
+    client_socket.settimeout(60)
+    last_activity = time.time()
+
     while True:
 
         try:
@@ -219,6 +332,7 @@ def handle_client(
             if not data:
                 break
 
+            last_activity = time.time()
             message = data.decode()
 
             packet = deserialize(
@@ -226,6 +340,21 @@ def handle_client(
             )
 
             packet_type = packet["type"]
+
+            # ==========================
+            # PING
+            # ==========================
+
+            if packet_type == PING:
+                response = create_packet(
+                    PONG
+                )
+                client_socket.send(
+                    serialize(
+                        response
+                    ).encode()
+                )
+                continue
 
             # ==========================
             # LOGIN
@@ -292,7 +421,14 @@ def handle_client(
                     packet,
                     client_socket
                 )
-            
+
+            elif packet_type == GET_PRIVATE_MESSAGES:
+
+                handle_get_private_messages(
+                    packet,
+                    client_socket
+                )
+
             elif packet_type == ONLINE_USERS:
 
                 handle_online_users(
@@ -330,6 +466,13 @@ def handle_client(
             elif packet_type == UPDATE_TASK:
 
                 handle_update_task(
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == DELETE_TASK:
+
+                handle_delete_task(
                     packet,
                     client_socket
                 )
@@ -377,6 +520,8 @@ def start_server():
         socket.AF_INET,
         socket.SOCK_STREAM
     )
+
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # ← tambah ini
 
     server.bind(
         (HOST, PORT)
@@ -435,6 +580,7 @@ def handle_create_room(
                 packet["sender"]
             ]
         }
+        save_state()
 
         response = packet_success(
             f"Room {room_name} created"
@@ -477,6 +623,17 @@ def handle_join_room(
                 "members"
             ].append(username)
 
+        if room_name not in room_sockets:
+            room_sockets[room_name] = []
+
+        if (username, client_socket) not in room_sockets[room_name]:
+            room_sockets[room_name].append(
+                (username, client_socket)
+            )
+
+        user_current_room[username] = room_name
+        save_state()
+
         response = packet_success(
             f"Joined {room_name}"
         )
@@ -485,7 +642,7 @@ def handle_join_room(
             f"[JOIN ROOM] "
             f"{username} -> {room_name}"
         )
-    
+
     print("\nROOMS:")
     print(rooms)
 
@@ -519,8 +676,24 @@ def handle_enter_room(
 
     else:
 
+        if room_name not in room_sockets:
+            room_sockets[room_name] = []
+
+        if (username, client_socket) not in room_sockets[room_name]:
+            room_sockets[room_name].append(
+                (username, client_socket)
+            )
+
+        user_current_room[username] = room_name
+        save_state()
+
         response = packet_success(
             f"Entered {room_name}"
+        )
+
+        print(
+            f"[ENTER ROOM] "
+            f"{username} -> {room_name}"
         )
 
     client_socket.send(
@@ -586,6 +759,7 @@ def handle_broadcast(
             "timestamp"
         ]
     })
+    save_state()
 
     print(
         f"[BROADCAST SAVED] "
@@ -602,6 +776,21 @@ def handle_broadcast(
         ).encode()
     )
 
+    # PUSH TO ALL ACTIVE CLIENTS IN ROOM
+    broadcast_packet = create_packet(
+        BROADCAST,
+        sender=username,
+        room=room_name,
+        data={
+            "message": message
+        }
+    )
+
+    broadcast_to_room(
+        room_name,
+        broadcast_packet
+    )
+
 #PRIVATE MESSAGE
 def handle_private_message(
     packet,
@@ -614,18 +803,70 @@ def handle_private_message(
 
     message = packet["data"]["message"]
 
-    print(
-        f"[PM] {sender} -> {target}"
-    )
+    if target not in online_users and target not in load_users():
 
-    response = packet_success(
-        "Private message saved"
-    )
+        response = packet_error(
+            "Target user not found"
+        )
+
+    else:
+
+        if sender not in private_messages:
+            private_messages[sender] = {}
+
+        if target not in private_messages[sender]:
+            private_messages[sender][target] = []
+
+        private_messages[sender][target].append({
+            "message": message,
+            "timestamp": packet["timestamp"],
+            "read": False
+        })
+
+        print(
+            f"[PM] {sender} -> {target}"
+        )
+
+        response = packet_success(
+            "Private message saved"
+        )
+
+        send_pm_notification(target, sender)
 
     client_socket.send(
         serialize(
             response
         ).encode()
+    )
+
+# GET PRIVATE MESSAGES
+def handle_get_private_messages(
+    packet,
+    client_socket
+):
+
+    username = packet["sender"]
+
+    user_pms = {}
+
+    for sender in private_messages:
+        if username in private_messages[sender]:
+            user_pms[sender] = private_messages[sender][username]
+
+    response = create_packet(
+        GET_PRIVATE_MESSAGES,
+        sender=username,
+        data={
+            "messages": user_pms
+        }
+    )
+
+    print(
+        f"[GET PM] {username}"
+    )
+
+    client_socket.send(
+        serialize(response).encode()
     )
 
 # ONLINE USERS
@@ -717,6 +958,16 @@ def handle_leave_room(
                 username
             )
 
+            if room_name in room_sockets:
+                room_sockets[room_name] = [
+                    (u, s) for u, s in room_sockets[room_name]
+                    if u != username
+                ]
+
+            if username in user_current_room:
+                if user_current_room[username] == room_name:
+                    del user_current_room[username]
+
             response = packet_success(
                 f"Left {room_name}"
             )
@@ -788,6 +1039,7 @@ def handle_create_task(
         tasks[
             room_name
         ].append(task)
+        save_state()
 
         print(
             f"[TASK CREATED] "
@@ -999,6 +1251,54 @@ def handle_update_task(
         serialize(response).encode()
     )
 
+
+def handle_delete_task(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+    username = packet["sender"]
+    task_id = packet["data"]["task_id"]
+
+    if room_name not in rooms:
+        response = packet_error("Room not found")
+        client_socket.send(serialize(response).encode())
+        return
+
+    task_found = False
+
+    for task in tasks.get(room_name, []):
+
+        if task["id"] == task_id:
+            task_found = True
+
+            # Hanya creator atau assignee yang boleh hapus
+            if username != task["created_by"] and username != task["assignee"]:
+                response = packet_error(
+                    "Only creator or assignee can delete this task"
+                )
+            else:
+                tasks[room_name].remove(task)
+
+                response = packet_success(
+                    f"Task '{task['title']}' deleted"
+                )
+
+                print(f"[DELETE TASK] '{task['title']}' by {username}")
+
+                # Notifikasi ke semua member room
+                notif_msg = f"Task '{task['title']}' was deleted by {username}"
+                for member in rooms[room_name]["members"]:
+                    if member != username:
+                        send_task_notification(member, notif_msg)
+            break
+
+    if not task_found:
+        response = packet_error("Task not found")
+
+    client_socket.send(serialize(response).encode())
+
 def send_task_notification(
     username,
     message
@@ -1039,5 +1339,6 @@ def send_task_notification(
 # ==========================================
 
 if __name__ == "__main__":
-
+    
+    load_state()
     start_server()

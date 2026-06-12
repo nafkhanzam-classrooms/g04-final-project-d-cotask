@@ -1,8 +1,14 @@
 {
-    "Salwa": {
-        "password": "59"
+    "naura": {
+        "password": "yipyip"
     },
-    "Ren": {
-        "password": "Orang"
+    "salwa": {
+        "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+    },
+    "lala": {
+        "password": "c6f3ac57944a531490cd39902d0f777715fd005efac9a30622d5f5205e7f6894"
+    },
+    "ais": {
+        "password": "670671cd97404156226e507973f2ab8330d3022ca96e0c93bdbdb320c41adcaf"
     }
 }
