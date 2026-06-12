@@ -5,6 +5,7 @@ from datetime import datetime
 # PACKET TYPES
 # ==========================================
 
+REGISTER = "REGISTER"
 LOGIN = "LOGIN"
 LOGOUT = "LOGOUT"
 

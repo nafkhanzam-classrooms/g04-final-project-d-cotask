@@ -25,10 +25,6 @@ def send_packet(client, packet):
 
 def main():
 
-    username = input(
-        "Username: "
-    )
-
     client = socket.socket(
         socket.AF_INET,
         socket.SOCK_STREAM
@@ -38,33 +34,80 @@ def main():
         (HOST, PORT)
     )
 
-    # ==========================
-    # LOGIN
-    # ==========================
+    username = ""
 
-    login_packet = create_packet(
-        LOGIN,
-        sender=username
-    )
+    while True:
 
-    response = send_packet(
-        client,
-        login_packet
-    )
+        print("\n===== COTASK =====")
+        print("1. Register")
+        print("2. Login")
+        print("3. Exit")
 
-    print("\nSERVER RESPONSE")
-    print(response)
+        choice = input("> ")
 
-    # Jika login gagal
-    if response["type"] == ERROR:
+        if choice == "1":
 
-        print(
-            "\nLogin gagal!"
-        )
+            username = input(
+                "Username: "
+            )
 
-        client.close()
+            password = input(
+                "Password: "
+            )
 
-        return
+            packet = create_packet(
+                REGISTER,
+                sender=username,
+                data={
+                    "password": password
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+        elif choice == "2":
+
+            username = input(
+                "Username: "
+            )
+
+            password = input(
+                "Password: "
+            )
+
+            packet = create_packet(
+                LOGIN,
+                sender=username,
+                data={
+                    "password": password
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+            if response["type"] == SUCCESS:
+
+                print(
+                    "\nLogin berhasil!"
+                )
+
+                break
+
+        elif choice == "3":
+
+            client.close()
+
+            return
 
     # ==========================
     # MAIN MENU

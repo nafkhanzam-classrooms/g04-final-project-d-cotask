@@ -1,5 +1,6 @@
 import socket
 import threading
+import json
 
 from protocol import *
 from server_state import *
@@ -9,32 +10,130 @@ HOST = "127.0.0.1"
 PORT = 5000
 
 
-# ==========================================
-# LOGIN HANDLER
-# ==========================================
+USER_FILE = "users.json"
 
-def handle_login(packet, client_socket):
+
+def load_users():
+
+    try:
+
+        with open(
+            USER_FILE,
+            "r"
+        ) as file:
+
+            return json.load(file)
+
+    except:
+
+        return {}
+    
+def save_users(users):
+
+    with open(
+        USER_FILE,
+        "w"
+    ) as file:
+
+        json.dump(
+            users,
+            file,
+            indent=4
+        )
+
+def handle_register(
+    packet,
+    client_socket
+):
 
     username = packet["sender"]
 
-    if username in online_users:
+    password = packet[
+        "data"
+    ]["password"]
+
+    users = load_users()
+
+    if username in users:
 
         response = packet_error(
-            "Username already in use"
+            "Username already exists"
         )
 
     else:
 
-        online_users[username] = client_socket
+        users[username] = {
+            "password": password
+        }
+
+        save_users(users)
+
+        response = packet_success(
+            "Register successful"
+        )
+
+        print(
+            f"[REGISTER] {username}"
+        )
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+# ==========================================
+# LOGIN HANDLER
+# ==========================================
+
+def handle_login(
+    packet,
+    client_socket
+):
+
+    username = packet["sender"]
+
+    password = packet[
+        "data"
+    ]["password"]
+
+    users = load_users()
+
+    if username not in users:
+
+        response = packet_error(
+            "User not registered"
+        )
+
+    elif users[
+        username
+    ]["password"] != password:
+
+        response = packet_error(
+            "Wrong password"
+        )
+
+    elif username in online_users:
+
+        response = packet_error(
+            "User already online"
+        )
+
+    else:
+
+        online_users[
+            username
+        ] = client_socket
 
         response = packet_success(
             "Login successful"
         )
 
-        print(f"[LOGIN] {username}")
+        print(
+            f"[LOGIN] {username}"
+        )
 
         print(
-            f"ONLINE USERS: {list(online_users.keys())}"
+            f"ONLINE USERS: "
+            f"{list(online_users.keys())}"
         )
 
     client_socket.send(
@@ -135,6 +234,13 @@ def handle_client(
             if packet_type == LOGIN:
 
                 handle_login(
+                    packet,
+                    client_socket
+                )
+            
+            elif packet_type == REGISTER:
+
+                handle_register(
                     packet,
                     client_socket
                 )
