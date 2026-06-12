@@ -259,6 +259,13 @@ def handle_client(
                     client_socket
                 )
 
+            elif packet_type == ENTER_ROOM:
+
+                handle_enter_room(
+                    packet,
+                    client_socket
+                )
+
             elif packet_type == ROOM_LIST:
 
                 handle_room_list(
@@ -295,6 +302,34 @@ def handle_client(
             elif packet_type == GET_HISTORY:
 
                 handle_get_history(
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == CREATE_TASK:
+
+                handle_create_task(
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == TASK_BOARD:
+
+                handle_task_board(
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == ASSIGN_TASK:
+
+                handle_assign_task(
+                    packet,
+                    client_socket
+                )
+
+            elif packet_type == UPDATE_TASK:
+
+                handle_update_task(
                     packet,
                     client_socket
                 )
@@ -453,6 +488,40 @@ def handle_join_room(
     
     print("\nROOMS:")
     print(rooms)
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+# ENTER ROOM
+def handle_enter_room(
+    packet,
+    client_socket
+):
+
+    username = packet["sender"]
+
+    room_name = packet["room"]
+
+    if room_name not in rooms:
+
+        response = packet_error(
+            "Room not found"
+        )
+
+    elif username not in rooms[
+        room_name
+    ]["members"]:
+
+        response = packet_error(
+            "You are not a member of this room"
+        )
+
+    else:
+
+        response = packet_success(
+            f"Entered {room_name}"
+        )
 
     client_socket.send(
         serialize(response).encode()
@@ -664,6 +733,306 @@ def handle_leave_room(
         serialize(response).encode()
     )
 
+# MASUK KE FITUR TAMBAHAN (TASK BOARD)  
+def handle_create_task(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+
+    username = packet["sender"]
+
+    title = packet[
+        "data"
+    ]["title"]
+
+    if room_name not in rooms:
+
+        response = packet_error(
+            "Room not found"
+        )
+
+    elif username not in rooms[
+        room_name
+    ]["members"]:
+
+        response = packet_error(
+            "You are not a member"
+        )
+
+    else:
+
+        if room_name not in tasks:
+
+            tasks[room_name] = []
+
+        task_id = len(
+            tasks[room_name]
+        ) + 1
+
+        task = {
+
+            "id": task_id,
+
+            "title": title,
+
+            "assignee": "",
+
+            "status": "TODO",
+
+            "created_by": username
+
+        }
+
+        tasks[
+            room_name
+        ].append(task)
+
+        print(
+            f"[TASK CREATED] "
+            f"{title}"
+        )
+
+        response = packet_success(
+            "Task created"
+        )
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+def handle_task_board(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+
+    room_tasks = tasks.get(
+        room_name,
+        []
+    )
+
+    response = create_packet(
+
+        TASK_BOARD,
+
+        room=room_name,
+
+        data={
+
+            "tasks": room_tasks
+
+        }
+    )
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+def handle_assign_task(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+
+    task_id = packet["data"]["task_id"]
+
+    assignee = packet["data"]["assignee"]
+
+    if room_name not in rooms:
+
+        response = packet_error(
+            "Room not found"
+        )
+
+    elif assignee not in rooms[
+        room_name
+    ]["members"]:
+
+        response = packet_error(
+            "User is not a room member"
+        )
+
+    else:
+
+        found = False
+
+        for task in tasks.get(
+            room_name,
+            []
+        ):
+
+            if task["id"] == task_id:
+
+                task[
+                    "assignee"
+                ] = assignee
+
+                send_task_notification(
+
+                    assignee,
+
+                    f"You have been assigned task: "
+                    f"{task['title']}"
+
+                )
+
+                found = True
+
+                break
+
+        if found:
+
+            response = packet_success(
+                "Task assigned"
+            )
+
+        else:
+
+            response = packet_error(
+                "Task not found"
+            )
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+def handle_update_task(
+    packet,
+    client_socket
+):
+
+    room_name = packet["room"]
+
+    username = packet["sender"]
+
+    task_id = packet["data"]["task_id"]
+
+    new_status = packet["data"]["status"]
+
+    valid_status = [
+        "TODO",
+        "IN_PROGRESS",
+        "DONE"
+    ]
+
+    if new_status not in valid_status:
+
+        response = packet_error(
+            "Invalid status"
+        )
+
+    else:
+
+        task_found = False
+
+        for task in tasks.get(
+            room_name,
+            []
+        ):
+
+            if task["id"] == task_id:
+
+                task_found = True
+
+                if task[
+                    "assignee"
+                ] != username:
+
+                    response = packet_error(
+                        "Only assignee can update this task"
+                    )
+
+                else:
+
+                    old_status = task[
+                        "status"
+                    ]
+
+                    task[
+                        "status"
+                    ] = new_status
+
+                    print(
+                        f"[TASK UPDATED] "
+                        f"{task['title']} "
+                        f"{old_status} -> "
+                        f"{new_status}"
+                    )
+
+                    response = packet_success(
+                        "Task updated"
+                    )
+
+                    # =====================
+                    # TASK COMPLETED
+                    # NOTIFICATION
+                    # =====================
+
+                    if new_status == "DONE":
+
+                        creator = task[
+                            "created_by"
+                        ]
+
+                        send_task_notification(
+
+                            creator,
+
+                            f"Task completed: "
+                            f"{task['title']}"
+
+                        )
+
+                break
+
+        if not task_found:
+
+            response = packet_error(
+                "Task not found"
+            )
+
+    client_socket.send(
+        serialize(response).encode()
+    )
+
+def send_task_notification(
+    username,
+    message
+):
+
+    if username not in online_users:
+
+        return
+
+    packet = create_packet(
+
+        TASK_NOTIFICATION,
+
+        data={
+            "message": message
+        }
+
+    )
+
+    try:
+
+        online_users[
+            username
+        ].send(
+
+            serialize(
+                packet
+            ).encode()
+
+        )
+
+    except:
+
+        pass
 
 # ==========================================
 # MAIN

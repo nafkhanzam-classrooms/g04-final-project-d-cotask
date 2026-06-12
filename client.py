@@ -1,11 +1,57 @@
 import socket
 from xmlrpc import client
+import threading
 
 from protocol import *
 
 HOST = "127.0.0.1"
 PORT = 5000
 
+current_room = None
+
+def receive_notifications(
+    client
+):
+
+    while True:
+
+        try:
+
+            response = client.recv(
+                4096
+            ).decode()
+
+            if not response:
+
+                break
+
+            packet = deserialize(
+                response
+            )
+
+            if packet[
+                "type"
+            ] == TASK_NOTIFICATION:
+
+                print(
+                    "\n=================="
+                )
+
+                print(
+                    "NOTIFICATION"
+                )
+
+                print(
+                    packet["data"]["message"]
+                )
+
+                print(
+                    "=================="
+                )
+
+        except:
+
+            break
 
 def send_packet(client, packet):
 
@@ -97,6 +143,16 @@ def main():
 
             if response["type"] == SUCCESS:
 
+                threading.Thread(
+
+                    target=receive_notifications,
+
+                    args=(client,),
+
+                    daemon=True
+
+                ).start()
+
                 print(
                     "\nLogin berhasil!"
                 )
@@ -109,6 +165,12 @@ def main():
 
             return
 
+        else:
+
+            print(
+                "Pilihan tidak valid!"
+            )
+
     # ==========================
     # MAIN MENU
     # ==========================
@@ -119,12 +181,11 @@ def main():
         print("1. Create Room")
         print("2. Join Room")
         print("3. Room List")
-        print("4. Online Users")
-        print("5. Broadcast Message")
+        print("4. Enter Room")
+        print("5. Online Users")
         print("6. Private Message")
-        print("7. Chat History")
-        print("8. Leave Room")
-        print("9. Exit")
+        print("7. View Private Messages")
+        print("8. Exit")
 
         choice = input("> ")
 
@@ -217,7 +278,40 @@ def main():
                         f"{i}. {room}"
                     )
 
+        # ENTER ROOM
         elif choice == "4":
+
+            room_name = input(
+                "Room Name: "
+            )
+
+            packet = create_packet(
+                ENTER_ROOM,
+                sender=username,
+                room=room_name
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            if response["type"] == SUCCESS:
+
+                current_room = room_name
+
+                room_menu(
+                    client,
+                    username,
+                    current_room
+                )
+
+            else:
+
+                print(response)
+
+        # ONLINE USERS
+        elif choice == "5":
 
             packet = create_packet(
                 ONLINE_USERS,
@@ -239,32 +333,7 @@ def main():
 
                 print(user)
 
-        elif choice == "5":
-
-            room_name = input(
-                "Room Name: "
-            )
-
-            message = input(
-                "Message: "
-            )
-
-            packet = create_packet(
-                BROADCAST,
-                sender=username,
-                room=room_name,
-                data={
-                    "message": message
-                }
-            )
-
-            response = send_packet(
-                client,
-                packet
-            )
-
-            print(response)
-
+        # PRIVATE MESSAGE
         elif choice == "6":
 
             target = input(
@@ -291,17 +360,74 @@ def main():
 
             print(response)
 
-
+        # VIEW PRIVATE MESSAGES
         elif choice == "7":
+            print(
+                "\nBelum diimplementasikan"
+            )
+    
+        # ======================
+        # EXIT
+        # ======================
 
-            room_name = input(
-                "Room Name: "
+        elif choice == "8":
+
+            print(
+                "\nDisconnecting..."
+            )
+
+            break
+
+        else:
+
+            print(
+                "Pilihan tidak valid!"
+            )
+
+    client.close()
+
+def room_menu(
+    client,
+    username,
+    current_room
+):
+
+    while True:
+
+        print(
+            f"\n===== ROOM : {current_room} ====="
+        )
+
+        print("1. Broadcast Message")
+        print("2. Chat History")
+
+        print("3. Task Board")
+        print("4. Create Task")
+        print("5. Assign Task")
+        print("6. Update Task")
+
+        print("7. Leave Room")
+        print("8. Back")
+
+        choice = input("> ")
+
+        # =====================
+        # BROADCAST
+        # =====================
+
+        if choice == "1":
+
+            message = input(
+                "Message: "
             )
 
             packet = create_packet(
-                GET_HISTORY,
+                BROADCAST,
                 sender=username,
-                room=room_name
+                room=current_room,
+                data={
+                    "message": message
+                }
             )
 
             response = send_packet(
@@ -309,8 +435,24 @@ def main():
                 packet
             )
 
-            print("\nDEBUG RESPONSE")
             print(response)
+
+        # =====================
+        # HISTORY
+        # =====================
+
+        elif choice == "2":
+
+            packet = create_packet(
+                GET_HISTORY,
+                sender=username,
+                room=current_room
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
 
             history = response[
                 "data"
@@ -338,20 +480,16 @@ def main():
                         f"{msg['message']}"
                     )
 
-        # ======================
-        # EXIT
-        # ======================
+        # =====================
+        # TASK BOARD
+        # =====================
 
-        elif choice == "8":
-
-            room_name = input(
-                "Room Name: "
-            )
+        elif choice == "3":
 
             packet = create_packet(
-                LEAVE_ROOM,
+                TASK_BOARD,
                 sender=username,
-                room=room_name
+                room=current_room
             )
 
             response = send_packet(
@@ -359,22 +497,190 @@ def main():
                 packet
             )
 
+            task_list = response[
+                "data"
+            ][
+                "tasks"
+            ]
+
             print(
-                "\nSERVER RESPONSE"
+                f"\n===== TASK BOARD ({current_room}) ====="
+            )
+
+            if not task_list:
+
+                print(
+                    "No task found."
+                )
+
+            else:
+
+                for task in task_list:
+
+                    print(
+                        f"\n[{task['id']}]"
+                    )
+
+                    print(
+                        f"Title: "
+                        f"{task['title']}"
+                    )
+
+                    print(
+                        f"Assignee: "
+                        f"{task['assignee']}"
+                    )
+
+                    print(
+                        f"Status: "
+                        f"{task['status']}"
+                    )
+
+        # =====================
+        # CREATE TASK
+        # =====================
+
+        elif choice == "4":
+
+            title = input(
+                "Task Title: "
+            )
+
+            packet = create_packet(
+                CREATE_TASK,
+                sender=username,
+                room=current_room,
+                data={
+                    "title": title
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
             )
 
             print(response)
 
-        elif choice == "9":
+        # =====================
+        # ASSIGN TASK
+        # =====================
+        elif choice == "5":
+
+            task_id = int(
+                input(
+                    "Task ID: "
+                )
+            )
+
+            assignee = input(
+                "Assign To: "
+            )
+
+            packet = create_packet(
+                ASSIGN_TASK,
+                sender=username,
+                room=current_room,
+                data={
+                    "task_id": task_id,
+                    "assignee": assignee
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+        # =====================
+        # UPDATE TASK
+        # =====================
+
+        elif choice == "6":
+
+            task_id = int(
+                input(
+                    "Task ID: "
+                )
+            )
 
             print(
-                "\nDisconnecting..."
+                "\nAvailable Status:"
             )
+
+            print("1. TODO")
+            print("2. IN_PROGRESS")
+            print("3. DONE")
+
+            status_choice = input("> ")
+
+            if status_choice == "1":
+
+                status = "TODO"
+
+            elif status_choice == "2":
+
+                status = "IN_PROGRESS"
+
+            elif status_choice == "3":
+
+                status = "DONE"
+
+            else:
+
+                print(
+                    "Invalid status"
+                )
+
+                continue
+
+            packet = create_packet(
+                UPDATE_TASK,
+                sender=username,
+                room=current_room,
+                data={
+                    "task_id": task_id,
+                    "status": status
+                }
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
+
+        # =====================
+        # LEAVE ROOM
+        # =====================
+
+        elif choice == "7":
+
+            packet = create_packet(
+                LEAVE_ROOM,
+                sender=username,
+                room=current_room
+            )
+
+            response = send_packet(
+                client,
+                packet
+            )
+
+            print(response)
 
             break
 
-    client.close()
+        # =====================
+        # BACK
+        # =====================
 
+        elif choice == "8":
+
+            break
 
 if __name__ == "__main__":
     main()
