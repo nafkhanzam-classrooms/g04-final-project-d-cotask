@@ -81,6 +81,62 @@ python load_test.py
 
 ---
 
+## Application Flow
+1. Authentication, wajib registrasi akun sebelum dapat menggunakan sistem
+   `Register → Login → Masuk ke Menu Utama`
+2. Room Management, 
+   ```
+   Menu Utama  ├── Create Room
+               ├── Join Room
+               └── Room List
+   ```
+3. Enter Room, setelah join ke suatu room, pengguna dapat enter room untuk menuju ke workspace room tersebut. Di dalam room, seluruh aktivitas chat dan task management dilakukan. 
+4. Real-time Communication, Setiap room menyediakan fitur komunikasi antar anggota secara real-time.
+```
+Broadcast Message
+        ↓
+      Server
+        ↓
+Semua Member Room
+```
+Selain chat room, pengguna juga dapat mengirim pesan pribadi kepada pengguna lain.
+```
+  Private Message
+        ↓
+      Server
+        ↓
+    Target User
+```
+5. Task Management, setiap room memiliki task board yang digunakan untuk mengelola pekerjaan kelompok. Alur task management:
+```
+  Create Task
+      ↓
+  Assign Task
+      ↓
+    TODO
+      ↓
+  IN_PROGRESS
+      ↓
+    DONE
+```
+Hanya pengguna yang ditugaskan (assignee) yang dapat memperbarui status task.
+6. Notification System, server secara otomatis mengirim notifikasi kepada pengguna ketika terjadi event tertentu.
+```
+    Assign Task
+        ↓
+Notification ke Assignee
+```
+```
+      Task Selesai
+          ↓
+Notification ke Creator Task
+```
+```
+    Private Message
+        ↓
+Notification ke Penerima
+```
+
 ## Desain Protokol
 
 Semua komunikasi menggunakan format JSON dengan struktur berikut:
@@ -248,11 +304,19 @@ Jalankan `load_test.py` untuk simulasi beban server:
 python load_test.py
 ```
 
-Script ini akan:
-- Spawn **10 client** secara bersamaan
-- Setiap client **register → login → join room → kirim 5 broadcast**
-- Mengukur **latency** tiap pesan
-- Menampilkan statistik: min, max, average latency
+Setiap client yang disimulasikan akan melakukan langkah-langkah berikut:
+- Terhubung ke server menggunakan TCP Socket.
+- Melakukan proses register dan login.
+- Bergabung ke room yang telah ditentukan.
+- Mengirim sejumlah pesan broadcast ke room.
+- Mengukur waktu yang dibutuhkan hingga server memberikan respons.
+
+Pengujian menghasilkan beberapa metrik performa berikut:
+- Success Rate: Persentase client yang berhasil menyelesaikan seluruh skenario tanpa error.
+- Latency Minimum: Waktu respons tercepat yang tercatat.
+- Latency Maximum: Waktu respons terlama yang tercatat.
+- Average Latency: Rata-rata waktu respons seluruh request.
+- Total Messages Processed: Jumlah pesan yang berhasil diproses server.
 
 Contoh output:
 ```
@@ -268,15 +332,17 @@ Pesan   : 5 per client
 ==================================================
 HASIL LOAD TEST
 ==================================================
-Total client  : 10
-Berhasil      : 10
+Total client  : 50
+Berhasil      : 50
 Gagal         : 0
-Total pesan   : 50
+Pesan/client  : 250
+Total pesan   : 250
+Throughput  : 370.70 msg/s
 
 Latency:
-  Min  : 1.23 ms
-  Max  : 8.45 ms
-  Avg  : 3.21 ms
+  Min  : 0.06 ms
+  Max  : 84.71 ms
+  Avg  : 4.90 ms
 ==================================================
 ```
 

@@ -1,0 +1,7 @@
+# Runtime data
+users.json
+state.json
+
+# Python cache
+__pycache__/
+*.pyc

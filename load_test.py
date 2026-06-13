@@ -10,7 +10,7 @@ from protocol import *
 HOST = "127.0.0.1"
 PORT = 5000
 
-JUMLAH_CLIENT = 10
+JUMLAH_CLIENT = 100
 PESAN_PER_CLIENT = 5
 ROOM_NAME = "loadtest_room"
 
@@ -97,7 +97,7 @@ def client_worker(client_id):
             })
 
 
-def print_summary():
+def print_summary(total_time):
     print("\n" + "="*50)
     print("HASIL LOAD TEST")
     print("="*50)
@@ -108,12 +108,18 @@ def print_summary():
     all_latencies = []
     for r in ok_results:
         all_latencies.extend(r["latencies"])
+    
+    throughput = (
+        len(all_latencies) / total_time
+        if total_time > 0 else 0
+    )
 
     print(f"Total client  : {JUMLAH_CLIENT}")
     print(f"Berhasil      : {len(ok_results)}")
     print(f"Gagal         : {len(error_results)}")
     print(f"Pesan/client  : {PESAN_PER_CLIENT}")
     print(f"Total pesan   : {len(all_latencies)}")
+    print(f"Throughput : {throughput:.2f} msg/s")
 
     if all_latencies:
         print(f"\nLatency:")
@@ -177,8 +183,7 @@ def main():
     total_time = time.time() - start_time
     print(f"\n[INFO] Total waktu: {total_time:.2f} detik")
 
-    print_summary()
-
+    print_summary(total_time)
 
 if __name__ == "__main__":
     main()
