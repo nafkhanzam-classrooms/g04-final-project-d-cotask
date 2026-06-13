@@ -1,11 +1,25 @@
 {
     "rooms": {
         "nana": {
-            "members": []
-        },
-        "nunu": {
             "members": [
                 "salwa"
+            ]
+        },
+        "nunu": {
+            "members": []
+        },
+        "loadtest_room": {
+            "members": [
+                "loadtest_user_1",
+                "loadtest_user_9",
+                "loadtest_user_4",
+                "loadtest_user_6",
+                "loadtest_user_8",
+                "loadtest_user_7",
+                "loadtest_user_2",
+                "loadtest_user_10",
+                "loadtest_user_3",
+                "loadtest_user_5"
             ]
         }
     },
@@ -35,6 +49,258 @@
                 "sender": "salwa",
                 "message": "hehe",
                 "timestamp": "2026-06-13 06:08:03"
+            }
+        ],
+        "loadtest_room": [
+            {
+                "sender": "loadtest_user_1",
+                "message": "Pesan 1 dari loadtest_user_1",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_6",
+                "message": "Pesan 1 dari loadtest_user_6",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_4",
+                "message": "Pesan 1 dari loadtest_user_4",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_7",
+                "message": "Pesan 1 dari loadtest_user_7",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_9",
+                "message": "Pesan 1 dari loadtest_user_9",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_5",
+                "message": "Pesan 1 dari loadtest_user_5",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_2",
+                "message": "Pesan 1 dari loadtest_user_2",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_3",
+                "message": "Pesan 1 dari loadtest_user_3",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_8",
+                "message": "Pesan 1 dari loadtest_user_8",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_10",
+                "message": "Pesan 1 dari loadtest_user_10",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_1",
+                "message": "Pesan 2 dari loadtest_user_1",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_6",
+                "message": "Pesan 2 dari loadtest_user_6",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_4",
+                "message": "Pesan 2 dari loadtest_user_4",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_7",
+                "message": "Pesan 2 dari loadtest_user_7",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_9",
+                "message": "Pesan 2 dari loadtest_user_9",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_5",
+                "message": "Pesan 2 dari loadtest_user_5",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_2",
+                "message": "Pesan 2 dari loadtest_user_2",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_3",
+                "message": "Pesan 2 dari loadtest_user_3",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_8",
+                "message": "Pesan 2 dari loadtest_user_8",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_10",
+                "message": "Pesan 2 dari loadtest_user_10",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_1",
+                "message": "Pesan 3 dari loadtest_user_1",
+                "timestamp": "2026-06-13 11:40:49"
+            },
+            {
+                "sender": "loadtest_user_6",
+                "message": "Pesan 3 dari loadtest_user_6",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_4",
+                "message": "Pesan 3 dari loadtest_user_4",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_7",
+                "message": "Pesan 3 dari loadtest_user_7",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_5",
+                "message": "Pesan 3 dari loadtest_user_5",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_9",
+                "message": "Pesan 3 dari loadtest_user_9",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_3",
+                "message": "Pesan 3 dari loadtest_user_3",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_2",
+                "message": "Pesan 3 dari loadtest_user_2",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_8",
+                "message": "Pesan 3 dari loadtest_user_8",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_10",
+                "message": "Pesan 3 dari loadtest_user_10",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_1",
+                "message": "Pesan 4 dari loadtest_user_1",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_6",
+                "message": "Pesan 4 dari loadtest_user_6",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_7",
+                "message": "Pesan 4 dari loadtest_user_7",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_4",
+                "message": "Pesan 4 dari loadtest_user_4",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_5",
+                "message": "Pesan 4 dari loadtest_user_5",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_9",
+                "message": "Pesan 4 dari loadtest_user_9",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_2",
+                "message": "Pesan 4 dari loadtest_user_2",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_3",
+                "message": "Pesan 4 dari loadtest_user_3",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_8",
+                "message": "Pesan 4 dari loadtest_user_8",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_10",
+                "message": "Pesan 4 dari loadtest_user_10",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_1",
+                "message": "Pesan 5 dari loadtest_user_1",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_6",
+                "message": "Pesan 5 dari loadtest_user_6",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_4",
+                "message": "Pesan 5 dari loadtest_user_4",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_7",
+                "message": "Pesan 5 dari loadtest_user_7",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_5",
+                "message": "Pesan 5 dari loadtest_user_5",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_9",
+                "message": "Pesan 5 dari loadtest_user_9",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_2",
+                "message": "Pesan 5 dari loadtest_user_2",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_3",
+                "message": "Pesan 5 dari loadtest_user_3",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_8",
+                "message": "Pesan 5 dari loadtest_user_8",
+                "timestamp": "2026-06-13 11:40:50"
+            },
+            {
+                "sender": "loadtest_user_10",
+                "message": "Pesan 5 dari loadtest_user_10",
+                "timestamp": "2026-06-13 11:40:50"
             }
         ]
     },

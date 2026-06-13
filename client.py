@@ -48,7 +48,12 @@ def receive_messages(client):
         except socket.timeout:
             continue
 
-        except:
+        except OSError as e:
+            print(f"\n[RECEIVER OSError] {e}")
+            break
+
+        except Exception as e:
+            print(f"\n[RECEIVER Exception] {e}")
             break
 
 def send_packet(client, packet):
@@ -122,6 +127,8 @@ def main():
     client.connect(
         (HOST, PORT)
     )
+
+    client.settimeout(None)  # ← tidak ada timeout di client
 
     username = ""
 

@@ -318,8 +318,7 @@ def handle_client(
         f"[CONNECTED] {address}"
     )
 
-    client_socket.settimeout(60)
-    last_activity = time.time()
+    client_socket.settimeout(None)
 
     while True:
 
@@ -488,6 +487,10 @@ def handle_client(
                         response
                     ).encode()
                 )
+
+        except socket.timeout:
+            # Client idle, lanjutkan — jangan disconnect
+            continue
 
         except Exception as e:
 
@@ -1339,6 +1342,6 @@ def send_task_notification(
 # ==========================================
 
 if __name__ == "__main__":
-    
+
     load_state()
     start_server()
