@@ -1,4 +1,4 @@
-## Anggota Kelompok
+## Anggota Kelompok 10
 | Nama           | NRP        | Kelas     |
 | ---            | ---        | ----------|
 | Salwa Nadia Maharani | 5025241041 | Program Jaringan D |
