@@ -3,35 +3,36 @@
 | ---            | ---        | ----------|
 | Salwa Nadia Maharani | 5025241041 | Program Jaringan D |
 | Naura Rossa Azalia | 5025241042 | Program Jaringan D |
-
+---
 ## Link Youtube (Unlisted)
 
 ```
 
 ```
+---
+# **Penjelasan Program**
 
-# CoTask — Multi-Chat Room dengan Task Board
+# **CoTask - Multi-Chat Room dengan Task Board**
 
 Aplikasi chat berbasis jaringan dengan fitur manajemen task, dibangun menggunakan Python socket programming untuk Final Project Pemrograman Jaringan ITS 2025/2026.
 
 ---
 
-## Fitur
+## **Fitur**
 
-- **Authentication** — Register dan login dengan password ter-hash (SHA-256)
-- **Multi-Room Chat** — Buat, join, dan masuk ke banyak room sekaligus
-- **Real-time Broadcast** — Pesan langsung muncul di semua client dalam room tanpa perlu refresh
-- **Private Message** — Kirim pesan langsung ke user lain beserta notifikasi real-time
-- **Chat History** — Riwayat pesan per room tersimpan
-- **Task Board** — Buat, assign, update status, dan hapus task per room
-- **Notifikasi Task** — Notifikasi otomatis saat di-assign task, task selesai, atau task dihapus
-- **Online Users** — Lihat siapa saja yang sedang online
-- **State Persistence** — Rooms, tasks, dan chat history tersimpan ke file JSON, tidak hilang saat server restart
+- **Authentication** - Register dan login dengan password ter-hash (SHA-256)
+- **Multi-Room Chat** - Buat, join, dan masuk ke banyak room sekaligus
+- **Real-time Broadcast** - Pesan langsung muncul di semua client dalam room tanpa perlu refresh
+- **Private Message** - Kirim pesan langsung ke user lain beserta notifikasi real-time
+- **Chat History** - Riwayat pesan per room tersimpan
+- **Task Board** - Buat, assign, update status, dan hapus task per room
+- **Notifikasi Task** - Notifikasi otomatis saat di-assign task, task selesai, atau task dihapus
+- **Online Users** - Lihat siapa saja yang sedang online
+- **State Persistence** - Rooms, tasks, dan chat history tersimpan ke file JSON, tidak hilang saat server restart
 
 ---
 
-## Arsitektur Sistem
-
+## **Arsitektur Sistem**
 ```
 ┌─────────────┐         TCP Socket          ┌─────────────────┐
 │   Client 1  │ ◄─────────────────────────► │                 │
@@ -54,7 +55,7 @@ Aplikasi chat berbasis jaringan dengan fitur manajemen task, dibangun menggunaka
 
 ---
 
-## Struktur File
+## **Struktur File**
 
 ```
 cotask/
@@ -70,30 +71,30 @@ cotask/
 
 ---
 
-## Cara Menjalankan
+## **Cara Menjalankan**
 
-### Requirement
+### **Requirement**
 - Python 3.8+
 - Tidak ada library eksternal (semua bawaan Python)
 
-### 1. Jalankan Server
+### **1. Jalankan Server**
 ```bash
 python server.py
 ```
 
-### 2. Jalankan Client (buka terminal baru untuk setiap user)
+### **2. Jalankan Client (buka terminal baru untuk setiap user)**
 ```bash
 python client.py
 ```
 
-### 3. Jalankan Load Test
+### **3. Jalankan Load Test**
 ```bash
 python load_test.py
 ```
 
 ---
 
-## Application Flow
+## **Application Flow**
 1. Authentication, wajib registrasi akun sebelum dapat menggunakan sistem
    `Register → Login → Masuk ke Menu Utama`
 2. Room Management, 
@@ -149,7 +150,7 @@ Notification ke Creator Task
 Notification ke Penerima
 ```
 
-## Desain Protokol
+## **Desain Protokol**
 
 Semua komunikasi menggunakan format JSON dengan struktur berikut:
 
@@ -163,9 +164,9 @@ Semua komunikasi menggunakan format JSON dengan struktur berikut:
 }
 ```
 
-### Daftar Packet Type
+### **Daftar Packet Type**
 
-| Type | Arah | Deskripsi |
+| **Type** | **Arah** | **Deskripsi** |
 |------|------|-----------|
 | `REGISTER` | Client → Server | Daftar akun baru |
 | `LOGIN` | Client → Server | Masuk ke sistem |
@@ -193,7 +194,7 @@ Semua komunikasi menggunakan format JSON dengan struktur berikut:
 
 ---
 
-### Contoh Packet
+### **Contoh Packet**
 
 **Register:**
 ```json
@@ -308,7 +309,7 @@ send_packet() ──────────────────────
 
 ---
 
-## Pengujian Beban
+## **Pengujian Beban**
 
 Jalankan `load_test.py` untuk simulasi beban server:
 
@@ -360,9 +361,9 @@ Latency:
 
 ---
 
-## Konsep Jaringan yang Diterapkan
+## **Konsep Jaringan yang Diterapkan**
 
-| Konsep | Implementasi |
+| **Konsep** | **Implementasi** |
 |--------|-------------|
 | TCP Socket | `socket.AF_INET, socket.SOCK_STREAM` |
 | Multithreading | `threading.Thread` per client di server |
