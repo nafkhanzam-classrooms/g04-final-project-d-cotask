@@ -1,3 +1,15 @@
+## Anggota Kelompok
+| Nama           | NRP        | Kelas     |
+| ---            | ---        | ----------|
+| Salwa Nadia Maharani | 5025241041 | Program Jaringan D |
+| Naura Rossa Azalia | 5025241042 | Program Jaringan D |
+
+## Link Youtube (Unlisted)
+
+```
+
+```
+
 # CoTask — Multi-Chat Room dengan Task Board
 
 Aplikasi chat berbasis jaringan dengan fitur manajemen task, dibangun menggunakan Python socket programming untuk Final Project Pemrograman Jaringan ITS 2025/2026.
