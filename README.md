@@ -10,8 +10,6 @@
 https://youtu.be/8HEx7fiEhNs
 ```
 ---
-# **Penjelasan Program**
-
 # **CoTask - Multi-Chat Room dengan Task Board**
 
 Aplikasi chat berbasis jaringan dengan fitur manajemen task, dibangun menggunakan Python socket programming untuk Final Project Pemrograman Jaringan ITS 2025/2026.
